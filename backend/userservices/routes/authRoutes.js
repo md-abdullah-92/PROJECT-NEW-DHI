@@ -82,11 +82,6 @@ const resetPasswordValidation = [
     .withMessage('Password must be at least 6 characters long')
 ];
 
-const sessionValidation = [
-  body('userId')
-    .notEmpty()
-    .withMessage('User ID is required')
-];
 
 const userIdValidation = [
   body('userId')
@@ -100,13 +95,9 @@ router.post('/login', loginValidation, authController.login);
 router.post('/forgot-password', forgotPasswordValidation, authController.forgotPassword);
 router.patch('/reset-password/:token', resetPasswordValidation, authController.resetPassword);
 
-// Session-based routes (require userId in request body for validation)
-router.post('/check-session', sessionValidation, authController.checkSession);
+// User-specific routes (require userId in request body for validation)
 router.post('/me', userIdValidation, authController.getMe);
 router.post('/logout', authController.logout); // userId optional for logout
 router.patch('/update-password', updatePasswordValidation, authController.updatePassword);
-
-// Admin utility routes
-router.post('/cleanup-sessions', authController.cleanupExpiredSessions);
 
 module.exports = router;

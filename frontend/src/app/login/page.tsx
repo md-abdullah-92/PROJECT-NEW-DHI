@@ -1,26 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState } from 'react';
+import { demoUsers, demoStudent } from '../lib/mockData';
 import { Eye, EyeOff, User, Lock, UserCircle, Users, BookOpen, Shield } from 'lucide-react'
-
-// Demo credentials for testing
-const DEMO_CREDENTIALS = {
-  principal: {
-    username: 'principal@dhikmah.edu',
-    password: 'admin123',
-    email: 'principal@dhikmah.edu'
-  },
-  teacher: {
-    username: 'teacher001',
-    password: 'teach123',
-    email: 'teacher@dhikmah.edu'
-  },
-  guardian: {
-    username: 'guardian001',
-    password: 'parent123',
-    email: 'guardian@email.com'
-  }
-}
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
@@ -32,48 +14,56 @@ export default function Login() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [showDemo, setShowDemo] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Check credentials
-      const credentials = DEMO_CREDENTIALS[loginType]
-      if (formData.username === credentials.username && formData.password === credentials.password) {
-        // Store user data in localStorage (in production, use secure tokens)
-        const userData = {
-          userType: loginType,
-          username: formData.username,
-          email: credentials.email,
-          loginTime: new Date().toISOString(),
-          remember: formData.remember
-        }
-        
-        localStorage.setItem('userAuth', JSON.stringify(userData))
-        
-        // Redirect based on user type
-        if (loginType === 'principal') {
-          window.location.href = '/dashboard-principal'
-        } else if (loginType === 'teacher') {
-          window.location.href = '/dashboard-teacher'
-        } else {
-          window.location.href = '/dashboard-guardian'
-        }
-      } else {
-        setError('ভুল ব্যবহারকারীর নাম বা পাসওয়ার্ড!')
+    let user;
+
+  
+     
+      user = demoUsers.find(
+        u => (u.username === formData.username || u.email === formData.username) &&
+             u.password === formData.password &&
+             u.role === loginType
+      );
+  
+
+    if (user) {
+      const { password, ...userToStore } = user;
+      const userData = {
+        ...userToStore,
+        loginTime: new Date().toISOString(),
+        remember: formData.remember,
+      };
+
+      localStorage.setItem('userAuth', JSON.stringify(userData));
+
+      // Redirect based on user type
+      switch (user.role) {
+        case 'principal':
+          window.location.href = '/dashboard-principal';
+          break;
+        case 'teacher':
+          window.location.href = '/dashboard-teacher';
+          break;
+        case 'guardian':
+          window.location.href = '/dashboard-guardian';
+          break;
+        default:
+          window.location.href = '/'; // Fallback redirect
       }
-    } catch (err) {
-      setError('লগইন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।')
-    } finally {
-      setIsLoading(false)
+    } else {
+      setError('ভুল ব্যবহারকারীর নাম বা পাসওয়ার্ড!');
     }
-  }
+
+    setIsLoading(false);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
@@ -85,21 +75,14 @@ export default function Login() {
     if (error) setError('')
   }
 
-  const fillDemoCredentials = () => {
-    const credentials = DEMO_CREDENTIALS[loginType]
-    setFormData(prev => ({
-      ...prev,
-      username: credentials.username,
-      password: credentials.password
-    }))
-  }
+
 
   const getLoginTypeInfo = () => {
     switch(loginType) {
       case 'principal':
         return {
           title: 'প্রিন্সিপাল',
-          placeholder: 'principal@dhikmah.edu',
+          placeholder: 'demo@gmail.com',
           description: 'আপনার প্রশাসনিক প্যানেলে প্রবেশ করুন',
           features: ['শিক্ষার্থীদের তথ্য দেখুন', 'পরীক্ষার ফলাফল পরিচালনা করুন', 'শিক্ষক ও কর্মচারী তথ্য', 'আর্থিক রিপোর্ট']
         }
@@ -158,37 +141,6 @@ export default function Login() {
                 </div>
                 <h2 className="text-3xl font-bold text-green-800">লগইন করুন</h2>
                 <p className="text-gray-600 mt-2">আপনার অ্যাকাউন্টে প্রবেশ করুন</p>
-              </div>
-
-              {/* Demo Credentials Button */}
-              <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowDemo(!showDemo)}
-                  className="w-full text-sm text-blue-600 hover:text-blue-700 underline"
-                >
-                  ডেমো ক্রেডেনশিয়াল দেখুন
-                </button>
-                {showDemo && (
-                  <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm">
-                    <p className="font-medium text-blue-800">
-                      {loginTypeInfo.title} ডেমো:
-                    </p>
-                    <p className="text-blue-700">
-                      <strong>ব্যবহারকারী:</strong> {DEMO_CREDENTIALS[loginType].username}
-                    </p>
-                    <p className="text-blue-700">
-                      <strong>পাসওয়ার্ড:</strong> {DEMO_CREDENTIALS[loginType].password}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={fillDemoCredentials}
-                      className="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                    >
-                      অটো ফিল করুন
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Login Type Selection */}

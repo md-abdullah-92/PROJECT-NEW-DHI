@@ -103,7 +103,6 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   if (user.loginAttempts > 0) await user.resetLoginAttempts();
-  await user.createSession();
 
   let additionalData = {};
   if (role === 'guardian') {
@@ -120,38 +119,10 @@ exports.login = catchAsync(async (req, res, next) => {
 // @desc    Logout user
 exports.logout = catchAsync(async (req, res) => {
   const { userId } = req.body;
-  if (userId) {
-    const user = await User.findById(userId);
-    if (user) await user.endSession();
-  }
+
   res.status(200).json({ status: 'success', message: 'Logged out successfully' });
 });
 
-// @desc    Check user session
-exports.checkSession = catchAsync(async (req, res, next) => {
-  const { userId } = req.body;
-  if (!userId) return next(new AppError('User ID is required', 400));
-
-  const user = await User.findById(userId);
-  if (!user) return next(new AppError('User not found', 404));
-  if (!user.isSessionValid()) return next(new AppError('Session expired', 401));
-
-  res.status(200).json({
-    status: 'success',
-    message: 'Session is valid',
-    data: {
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        profile: user.profile,
-        isActive: user.isActive,
-        lastLogin: user.lastLogin
-      }
-    }
-  });
-});
 
 // @desc    Forgot password
 exports.forgotPassword = catchAsync(async (req, res, next) => {
@@ -199,7 +170,7 @@ exports.getMe = catchAsync(async (req, res, next) => {
 
   const user = await User.findById(userId);
   if (!user) return next(new AppError('User not found', 404));
-  if (!user.isSessionValid()) return next(new AppError('Session expired', 401));
+
 
   let additionalData = {};
   if (user.role === 'guardian') {
@@ -226,7 +197,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
   const user = await User.findById(userId).select('+password');
   if (!user) return next(new AppError('User not found', 404));
-  if (!user.isSessionValid()) return next(new AppError('Session expired', 401));
+
 
   // Plain password check
   if (user.password !== currentPassword &&
@@ -238,17 +209,4 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   createSendResponse(user, 200, res, 'Password updated successfully');
-});
-
-// @desc    Cleanup expired sessions
-exports.cleanupExpiredSessions = catchAsync(async (req, res) => {
-  const result = await User.updateMany(
-    { isLoggedIn: true, sessionExpires: { $lt: new Date() } },
-    { $set: { isLoggedIn: false }, $unset: { sessionExpires: 1 } }
-  );
-
-  res.status(200).json({
-    status: 'success',
-    message: `Cleaned up ${result.modifiedCount} expired sessions`
-  });
 });

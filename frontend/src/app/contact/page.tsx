@@ -9,10 +9,9 @@ import {
   Facebook,
   Clock,
   Send,
-  User,
-  MessageCircle,
   Youtube,
 } from "lucide-react";
+import emailjs from "emailjs-com";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -29,27 +28,36 @@ export default function Contact() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    try {
-      const res = await fetch("http://localhost:5000/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
 
-      if (res.ok) {
-        alert("বার্তা সফলভাবে পাঠানো হয়েছে!");
-        setFormData({
-          name: "",
-          email: "",
-          phone: "",
-          subject: "",
-          message: "",
-        });
-      } else {
-        alert("বার্তা পাঠাতে ব্যর্থ হয়েছে।");
-      }
-    } catch (err) {
-      alert("সার্ভার ত্রুটি! পরে চেষ্টা করুন।");
+    try {
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        phone: formData.phone,
+        subject: formData.subject,
+        message: formData.message,
+      };
+      console.log("Sending email with params:", templateParams);
+
+      await emailjs.send(
+        "service_3ejd3z9", // Your Service ID
+        "template_ih17ibq", // Your Template ID
+        templateParams,
+        "WOeUS1toAdBwQoDid" // Your Public Key
+      );
+
+
+      alert("বার্তা সফলভাবে পাঠানো হয়েছে!");
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error(error);
+      alert("বার্তা পাঠাতে ব্যর্থ হয়েছে। পরে চেষ্টা করুন।");
     }
   };
 

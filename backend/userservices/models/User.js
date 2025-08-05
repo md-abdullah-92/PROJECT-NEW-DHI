@@ -3,30 +3,31 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: [true, 'ব্যবহারকারীর নাম প্রয়োজন'],
+
     unique: true,
-    trim: true
+    trim: true,
   },
   email: {
     type: String,
-    required: [true, 'ইমেইল প্রয়োজন'],
+  
     unique: true,
     trim: true,
     lowercase: true
   },
   password: {
     type: String,
-    required: [true, 'পাসওয়ার্ড প্রয়োজন'],
-    minlength: 6
+    
   },
   role: {
     type: String,
-    enum: ['principal', 'teacher', 'staff', 'student'],
-    required: [true, 'ভূমিকা প্রয়োজন']
+    enum: ['principal', 'teacher', 'staff', 'student', 'guardian'],
+    
   },
   profile: {
-    type: mongoose.Schema.Types.ObjectId,
-    refPath: 'profileModel'
+    fullName: { type: String, required: true },
+    fullNameBangla: { type: String },
+    phone: { type: String },
+    address: { type: String }
   },
   profileModel: {
     type: String,
@@ -36,9 +37,8 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  lastLogin: {
-    type: Date
-  },
+  isEmailVerified: { type: Boolean, default: false },
+  passwordChangedAt: Date,
   permissions: [{
     type: String
   }]
@@ -47,9 +47,11 @@ const userSchema = new mongoose.Schema({
 });
 
 // Simple password comparison method (no hashing)
-userSchema.methods.comparePassword = function(candidatePassword) {
-  return this.password === candidatePassword;
+userSchema.methods.correctPassword = async function (candidatePassword) {
+  // In a real app, use bcrypt.compare
+  return candidatePassword === this.password;
 };
+
 
 userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });

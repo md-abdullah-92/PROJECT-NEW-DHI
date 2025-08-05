@@ -1,450 +1,233 @@
-'use client'
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import api from '@/lib/api';
-import { 
-  Users, 
-  BookOpen, 
-  FileText, 
-  Bell, 
-  BarChart3, 
-  Search,
-  Plus,
-  Settings,
-  LogOut,
-  Home,
-  GraduationCap,
-  ClipboardList,
-  MessageSquare,
-  Download,
-  Upload,
-  Eye,
-  Edit,
-  Trash2,
-  Send
-} from 'lucide-react';
-import Link from "next/link";
+import { useRouter } from 'next/navigation';
+import Sidebar from '@/app/dashboard-principal/Sidebar';
+import OverviewTab from '@/app/dashboard-principal/OverviewTab';
+import StudentsTab from '@/app/dashboard-principal/StudentsTab';
+import TeachersTab from '@/app/dashboard-principal/TeachersTab';
+import ResultsTab from '@/app/dashboard-principal/ResultsTab';
+import NoticesTab from '@/app/dashboard-principal/NoticesTab';
+import NoticeModal from '@/app/dashboard-principal/NoticeModal';
+import { toast } from 'react-hot-toast';
 
-import { useRouter } from "next/navigation";
-
-const PrincipalDashboard = () => {
-  const router = useRouter();
+export default function PrincipalDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [noticeText, setNoticeText] = useState('');
-  type Student = {
-    _id: string;
-    fullNameBangla?: string;
-    fullName?: string;
-    class?: string;
-    roll?: string;
-    guardianName?: string;
-    guardianContact?: string;
-    lastResult?: string;
-  };
-  
-  type Teacher = {
-    id: string;
-    name: string;
-    phone?: string;
-    teacherData?: {
-      subjectsTaught?: string[];
-      experienceYears?: number;
-    };
-  };
-  
-  type Class = {
-    // Define class properties if needed
-  };
-  
-  const [data, setData] = useState<{ students: Student[]; teachers: Teacher[]; classes: Class[] }>({ students: [], teachers: [], classes: [] });
-  const [stats, setStats] = useState({ totalStudents: 0, totalTeachers: 0, totalClasses: 0, pendingResults: 0 });
+  const [noticeTitle, setNoticeTitle] = useState('');
+  const [notices, setNotices] = useState([
+  {
+    id: 1,
+    title: 'বার্ষিক ক্রীড়া প্রতিযোগিতা',
+    content: 'আগামী ২৫শে আগস্ট, ২০২৫ তারিখে প্রতিষ্ঠানের বার্ষিক ক্রীড়া প্রতিযোগিতা অনুষ্ঠিত হবে।',
+    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+    type: 'info'
+  },
+  {
+    id: 2,
+    title: 'অভিভাবক সমাবেশ',
+    content: 'সকল শিক্ষার্থীদের অভিভাবকদের নিয়ে একটি সমাবেশ অনুষ্ঠিত হবে আগামী শুক্রবার।',
+    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+    type: 'warning'
+  },
+  {
+    id: 3,
+    title: 'ছুটি ঘোষণা',
+    content: 'ঈদ-উল-মিলাদুন্নবী (সা.) উপলক্ষে আগামী সোমবার প্রতিষ্ঠান বন্ধ থাকবে।',
+    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+    type: 'success'
+  },
+  {
+    id: 4,
+    title: 'পরীক্ষার সময়সূচি প্রকাশ',
+    content: 'অর্ধবার্ষিক পরীক্ষার সময়সূচি প্রকাশিত হয়েছে। অনুগ্রহ করে নোটিশ বোর্ডে দেখে নিন।',
+    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+    type: 'info'
+  },
+  {
+    id: 5,
+    title: 'শ্রেণিকক্ষ রক্ষণাবেক্ষণ',
+    content: 'আগামীকাল শ্রেণিকক্ষগুলোতে পরিষ্কার-পরিচ্ছন্নতা কার্যক্রম চলবে, সকল শিক্ষার্থীকে সচেতন থাকতে বলা হলো।',
+    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+    type: 'warning'
+  }
+]);
+
+  const [results, setResults] = useState([
+  {
+    id: 1,
+    student: 'আবু বকর সিদ্দিক',
+    className: 'দ্বিতীয় জামাত',
+    exam: 'মাসিক পরীক্ষা',
+    grade: 'A+'
+  },
+  {
+    id: 2,
+    student: 'ফাতিমা বিনতে মুহাম্মদ',
+    className: 'তৃতীয় জামাত',
+    exam: 'ত্রৈমাসিক পরীক্ষা',
+    grade: 'A'
+  },
+  {
+    id: 3,
+    student: 'মুহাম্মদ আল আমিন',
+    className: 'চতুর্থ জামাত',
+    exam: 'অর্ধবার্ষিক পরীক্ষা',
+    grade: 'B+'
+  },
+  {
+    id: 4,
+    student: 'রহিমা খাতুন',
+    className: 'হিফজ বিভাগ',
+    exam: 'অগ্রগতির পরীক্ষা',
+    grade: 'A'
+  },
+  {
+    id: 5,
+    student: 'তানভীর হাসান',
+    className: 'পঞ্চম জামাত',
+    exam: 'মাসিক পরীক্ষা',
+    grade: 'A+'
+  },
+  {
+    id: 6,
+    student: 'সুমাইয়া আক্তার',
+    className: 'ছয় নম্বর জামাত',
+    exam: 'ত্রৈমাসিক পরীক্ষা',
+    grade: 'A'
+  },
+  {
+    id: 7,
+    student: 'আব্দুল করিম',
+    className: 'মুত্তাওয়াসসিতাহ',
+    exam: 'বার্ষিক পরীক্ষা',
+    grade: 'B'
+  },
+  {
+    id: 8,
+    student: 'জয়নাব বিনতে আবু তালেব',
+    className: 'সানাবিয়া উলা',
+    exam: 'মধ্যবর্তী পরীক্ষা',
+    grade: 'A+'
+  }
+]);
+const [students, setStudents] = useState([
+  {
+    id: 1,
+    fullName: 'মুহাম্মদ আরিফুল ইসলাম',
+    fatherName: 'মোঃ সাইফুল ইসলাম',
+    className: 'তৃতীয় জামাত',
+    phone: '01711223344'
+  },
+  {
+    id: 2,
+    fullName: 'ফারজানা আক্তার',
+    fatherName: 'মোঃ আবুল কালাম',
+    className: 'দ্বিতীয় জামাত',
+    phone: '01899887766'
+  },
+  {
+    id: 3,
+    fullName: 'হাফিজ তানভীর আহমেদ',
+    fatherName: 'মাওলানা রশীদুল ইসলাম',
+    className: 'হিফজ বিভাগ',
+    phone: '01911224455'
+  },
+  {
+    id: 4,
+    fullName: 'সাদিয়া বিনতে রশিদ',
+    fatherName: 'মোঃ রফিকুল ইসলাম',
+    className: 'সানাবিয়া উলা',
+    phone: '01677665544'
+  },
+  {
+    id: 5,
+    fullName: 'জয়নুল আবেদিন',
+    fatherName: 'হাফেজ মজিবুর রহমান',
+    className: 'মুত্তাওয়াসসিতাহ',
+    phone:'01733445566'
+  }
+]);
+
+const [teachers, setTeachers] = useState([
+  {
+    id: 1,
+    name: 'মোঃ আব্দুল্লাহ',
+    position: 'প্রধান শিক্ষক',
+    contact: '01712345678'
+  },
+  {
+    id: 2,
+    name: 'মাওলানা রাশেদুল ইসলাম',
+    position: 'সহকারী প্রধান শিক্ষক',
+    contact: '01811223344'
+  },
+  {
+    id: 3,
+    name: 'হাফেজ মিজানুর রহমান',
+    position: 'হিফজ বিভাগের শিক্ষক',
+    contact: '01699887766'
+  },
+  {
+    id: 4,
+    name: 'মাওলানা খালিদ বিন ওয়ালিদ',
+    position: 'আকায়েদ ও ফিকহ',
+    contact: '01987654321'
+  },
+  {
+    id: 5,
+    name: 'উস্তাদা শামিমা আক্তার',
+    position: 'নারী বিভাগের ইনচার্জ',
+    contact: '01755443322'
+  },
+  {
+    id: 6,
+    name: 'মাওলানা আবু বকর সিদ্দিক',
+    position: 'তাফসির ও হাদীস',
+    contact: '01876543210'
+  },
+  {
+    id: 7,
+    name: 'হাফেজা সায়মা বিনতে তাহের',
+    position: 'হিফজ (নারী বিভাগ)',
+    contact: '01912345678'
+  }
+]);
+
+
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalClasses: 0,
+    pendingResults: 0
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userAuth');
-    router.push('/login');
-  };
+  const router = useRouter();
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [studentsRes, teachersRes, classesRes] = await Promise.all([
-        api.get('/students'),
-        api.get('/teachers'),
-        api.get('/classes'),
-      ]);
-
-      setData({
-        students: studentsRes.data?.data || [],
-        teachers: teachersRes.data?.data || [],
-        classes: classesRes.data?.data || [],
-      });
-
+    setLoading(true);
+    // Simulate fetching stats
+    setTimeout(() => {
       setStats({
-        totalStudents: studentsRes.data?.count || 0,
-        totalTeachers: teachersRes.data?.count || 0,
-        totalClasses: classesRes.data?.count || 0,
-        pendingResults: 12, // Placeholder
+        totalStudents: 150,
+        totalTeachers: 15,
+        totalClasses: 10,
+        pendingResults: 12
       });
-
-    } catch (err) {
-      console.error('Fetch error:', err);
-      // Fallback to default/empty state
-      setStats({ 
-        totalStudents: 0, 
-        totalTeachers: 0, 
-        totalClasses: 0, 
-        pendingResults: 0 
-      });
-      setData({ students: [], teachers: [], classes: [] });
-    } finally {
       setLoading(false);
+    }, 500);
+  }, []);
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('userAuth');
+      toast.success('Logged out successfully');
+      router.push('/');
     }
   };
-
-  fetchData();
-}, []);
-
-
-  const recentResults = [
-    { id: 1, student: 'মোহাম্মদ আহমেদ', class: 'দশম', exam: 'মাসিক পরীক্ষা', result: 'A+', date: '২০২৫-০৭-০৮' },
-    { id: 2, student: 'ফাতিমা খাতুন', class: 'নবম', exam: 'সাপ্তাহিক পরীক্ষা', result: 'A', date: '২০২৫-০৭-০৭' },
-    { id: 3, student: 'আবু বকর সিদ্দিক', class: 'অষ্টম', exam: 'মাসিক পরীক্ষা', result: 'A+', date: '২০২৫-০৭-০৬' }
-  ];
-
-  const Sidebar = () => (
-    <div className="w-64 bg-gradient-to-b from-green-700 to-green-800 text-white h-screen fixed left-0 top-0 overflow-y-auto">
-      <div className="p-4 border-b border-green-600">
-        <h2 className="text-xl font-bold text-center">দারুল হিকমাহ ইনস্টিটিউট</h2>
-        <p className="text-green-200 text-center text-sm mt-1">প্রিন্সিপাল প্যানেল</p>
-      </div>
-      
-      <nav className="mt-6">
-        <div className="px-4 py-2">
-          <p className="text-green-200 text-xs uppercase font-semibold">মূল মেনু</p>
-        </div>
-        
-        {[
-          { id: 'overview', label: 'ওভারভিউ', icon: Home },
-          { id: 'students', label: 'শিক্ষার্থী তথ্য', icon: Users },
-          { id: 'teachers', label: 'শিক্ষক তথ্য', icon: GraduationCap },
-          { id: 'results', label: 'পরীক্ষার ফলাফল', icon: BarChart3 },
-          { id: 'reports', label: 'রিপোর্ট', icon: FileText },
-          { id: 'notices', label: 'নোটিশ', icon: Bell },
-          { id: 'settings', label: 'সেটিংস', icon: Settings }
-        ].map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center px-4 py-3 text-left hover:bg-green-600 transition-colors ${
-              activeTab === item.id ? 'bg-green-600 border-r-4 border-white' : ''
-            }`}
-          >
-            <item.icon className="w-5 h-5 mr-3" />
-            {item.label}
-          </button>
-        ))}
-      </nav>
-      
-      <div className="absolute bottom-0 w-full p-4 border-t border-green-600">
-        <button onClick={handleLogout} className="w-full flex items-center px-4 py-2 text-left hover:bg-green-600 transition-colors">
-          <LogOut className="w-5 h-5 mr-3" />
-          লগ আউট
-        </button>
-      </div>
-    </div>
-  );
-
-  type StatCardProps = {
-    title: string;
-    value: number | string;
-    icon: React.ElementType;
-    color: string;
-  };
-
-    const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => {
-          return (
-              <div className={`bg-white rounded-lg shadow-md p-5 border-l-4 ${color}`}>
-              <div className="flex items-center justify-between">
-                  <div>
-                  <p className="text-sm text-gray-600">{title}</p>
-                  <p className="text-2xl font-bold text-gray-800">{value}</p>
-                  </div>
-                  {Icon && <Icon
-                  className="w-10 h-10 text-gray-400" />}
-              </div>
-              </div>
-          );
-  };
-
-  const OverviewTab = () => (
-    <div className="space-y-6">
-      
-
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="মোট শিক্ষার্থী" value={stats.totalStudents} icon={Users} color="border-blue-500" />
-        <StatCard title="মোট শিক্ষক" value={stats.totalTeachers} icon={GraduationCap} color="border-green-500" />
-        <StatCard title="মোট ক্লাস" value={stats.totalClasses} icon={BookOpen} color="border-purple-500" />
-        <StatCard title="পেন্ডিং রেজাল্ট" value={stats.pendingResults} icon={ClipboardList} color="border-orange-500" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">সাম্প্রতিক ফলাফল</h3>
-          <div className="space-y-3">
-            {recentResults.map((result) => (
-              <div key={result.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-800">{result.student}</p>
-                  <p className="text-sm text-gray-600">{result.class} - {result.exam}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-green-600">{result.result}</p>
-                  <p className="text-xs text-gray-500">{result.date}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">দ্রুত অ্যাকশন</h3>
-          <div className="space-y-3">
-      <Link href="/new-student-add">
-        <button className="w-full flex items-center justify-center bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors">
-          <Plus className="w-5 h-5 mr-2" />
-          নতুন শিক্ষার্থী যোগ করুন
-        </button>
-      </Link>
-            <button 
-              onClick={() => setShowNoticeModal(true)}
-              className="w-full flex items-center justify-center bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition-colors"
-            >
-              <Bell className="w-5 h-5 mr-2" />
-              নোটিশ পাঠান
-            </button>
-            <button className="w-full flex items-center justify-center bg-purple-500 text-white py-3 px-4 rounded-lg hover:bg-purple-600 transition-colors">
-              <Download className="w-5 h-5 mr-2" />
-              রিপোর্ট ডাউনলোড
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-
-  const TeachersTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">শিক্ষক তথ্য</h2>
-         <button
-            onClick={() => router.push('/new-teacher-add')}
-            className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            নতুন শিক্ষক
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data.teachers.map((teacher: any) => (
-            <div key={teacher.id} className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex space-x-2">
-                  <button className="text-blue-600 hover:text-blue-800">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button className="text-green-600 hover:text-green-800">
-                    <MessageSquare className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-1">{teacher.name}</h3>
-              <p className="text-sm text-gray-600 mb-2">{teacher.teacherData?.subjectsTaught.join(', ') || 'N/A'}</p>
-              <p className="text-sm text-gray-500 mb-2">{teacher.phone}</p>
-              <p className="text-xs text-green-600 font-medium">{teacher.teacherData?.experienceYears || 0} বছর</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const ResultsTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">পরীক্ষার ফলাফল</h2>
-          <div className="flex space-x-2">
-            <button className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
-              <Upload className="w-4 h-4 mr-2" />
-              ফলাফল আপলোড
-            </button>
-            <button className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
-              <Plus className="w-4 h-4 mr-2" />
-              নতুন পরীক্ষা
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-gradient-to-r from-green-400 to-green-600 text-white p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">সম্পূর্ণ ফলাফল</h3>
-            <p className="text-2xl font-bold">৮৫%</p>
-          </div>
-          <div className="bg-gradient-to-r from-blue-400 to-blue-600 text-white p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">পেন্ডিং</h3>
-            <p className="text-2xl font-bold">১২</p>
-          </div>
-          <div className="bg-gradient-to-r from-purple-400 to-purple-600 text-white p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">গড় নম্বর</h3>
-            <p className="text-2xl font-bold">৮৭.৫</p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">শিক্ষার্থী</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">শ্রেণী</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">পরীক্ষা</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">ফলাফল</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">তারিখ</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">অ্যাকশন</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentResults.map((result) => (
-                <tr key={result.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">{result.student}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{result.class}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{result.exam}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      result.result === 'A+' ? 'bg-green-100 text-green-800' :
-                      result.result === 'A' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {result.result}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{result.date}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <button className="text-blue-600 hover:text-blue-800">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-800">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-purple-600 hover:text-purple-800">
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-
-  const NoticesTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">নোটিশ বোর্ড</h2>
-          <button 
-            onClick={() => setShowNoticeModal(true)}
-            className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            নতুন নোটিশ
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {[
-            { id: 1, title: 'বার্ষিক পরীক্ষার সময়সূচী', date: '২০২৫-০৭-১০', type: 'জরুরি' },
-            { id: 2, title: 'নতুন শিক্ষাবর্ষের ভর্তি', date: '২০২৫-০৭-০৮', type: 'সাধারণ' },
-            { id: 3, title: 'শিক্ষক সভা', date: '২০২৫-০৭-০৫', type: 'সভা' }
-          ].map((notice) => (
-            <div key={notice.id} className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-800">{notice.title}</h3>
-                  <p className="text-sm text-gray-600">{notice.date}</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    notice.type === 'জরুরি' ? 'bg-red-100 text-red-800' :
-                    notice.type === 'সভা' ? 'bg-blue-100 text-blue-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
-                    {notice.type}
-                  </span>
-                  <button className="text-blue-600 hover:text-blue-800">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button className="text-green-600 hover:text-green-800">
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const NoticeModal = () => {
-    if (!showNoticeModal) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">নতুন নোটিশ পাঠান</h3>
-          <textarea
-            value={noticeText}
-            onChange={(e) => setNoticeText(e.target.value)}
-            placeholder="নোটিশের বিষয়বস্তু লিখুন..."
-            className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <div className="flex justify-end space-x-3 mt-4">
-            <button
-              onClick={() => setShowNoticeModal(false)}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              বাতিল
-            </button>
-            <button
-              onClick={() => {
-                // Handle send notice logic here
-                setShowNoticeModal(false);
-                setNoticeText('');
-              }}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-              পাঠান
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-   };
 
   const renderContent = () => {
     if (loading) {
@@ -454,42 +237,54 @@ const PrincipalDashboard = () => {
         </div>
       );
     }
-
     if (error) {
-  return (
-    <div className="flex justify-center items-center h-full">
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong className="font-bold">Error:</strong>
-        <span className="block sm:inline"> {error}</span>
-      </div>
-    </div>
-  );
-}
-
-
-    return renderActiveTab();
-  };
-
-  const renderActiveTab = () => {
+      return <div className="text-red-500">Error: {error}</div>;
+    }
     switch (activeTab) {
       case 'overview':
-        return <OverviewTab />;
+        return <OverviewTab stats={stats} setActiveTab={setActiveTab} />;
       case 'students':
-        return <StudentsTab />;
-      case 'teachers':
-        return <TeachersTab />;
-      case 'results':
-        return <ResultsTab />;
+        return <StudentsTab students={students} setStudents={setStudents} />;
+     case 'teachers':
+  return <TeachersTab teachers={teachers} setTeachers={setTeachers} />;
+
+      case 'results': return <ResultsTab results={results} setResults={setResults} />;
+
       case 'notices':
-        return <NoticesTab />;
+        return (
+          <NoticesTab
+            notices={notices}
+            setNotices={setNotices}
+            setShowModal={setShowNoticeModal}
+          />
+        );
       default:
-        return <OverviewTab />;
+        return <OverviewTab stats={stats} setActiveTab={setActiveTab} />;
     }
+  };
+
+  const getBengaliDate = () => {
+    const months = [
+      "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+      "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
+    ];
+    const bnDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+    const toBengaliNumber = (num: number | string) =>
+      String(num)
+        .split('')
+        .map(d => /\d/.test(d) ? bnDigits[Number(d)] : d)
+        .join('');
+
+    const now = new Date();
+    return `${toBengaliNumber(now.getDate())} ${months[now.getMonth()]}, ${toBengaliNumber(now.getFullYear())}`;
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Sidebar />
+      {/* Sidebar */}
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} />
+
+      {/* Header */}
       <div className="ml-64 p-6">
         <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
           <div className="flex items-center justify-between">
@@ -509,33 +304,40 @@ const PrincipalDashboard = () => {
           </div>
         </div>
 
+        {/* Add Notice Button (only in notices tab) */}
+        {activeTab === 'notices' && (
+          <div className="pb-4 flex justify-end">
+            <button
+              onClick={() => setShowNoticeModal(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition-colors"
+            >
+              <span className="mr-2">➕</span>
+              নতুন নোটিশ
+            </button>
+          </div>
+        )}
+
+        {/* Content */}
         {renderContent()}
       </div>
-      
-      <NoticeModal />
+
+      {/* Notice Modal */}
+      {showNoticeModal && (
+        <NoticeModal
+          onClose={() => setShowNoticeModal(false)}
+          onSubmit={(title, content) => {
+            const newNotice = {
+              id: Date.now(),
+              title,
+              content,
+              date: new Date(),
+              type: 'info'
+            };
+            setNotices([newNotice, ...notices]);
+            setShowNoticeModal(false);
+          }}
+        />
+      )}
     </div>
   );
-};
-
-  {/*Time Function*/}
-  export default PrincipalDashboard;
-  function getBengaliDate(): React.ReactNode {
-    // Bengali months
-    const months = [
-      "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
-      "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
-    ];
-    // Bengali digits
-    const bnDigits = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
-
-    // Convert English digits to Bengali
-    const toBengaliNumber = (num: number | string) =>
-      String(num).split('').map(d => /\d/.test(d) ? bnDigits[Number(d)] : d).join('');
-
-    const now = new Date();
-    const day = toBengaliNumber(now.getDate());
-    const month = months[now.getMonth()];
-    const year = toBengaliNumber(now.getFullYear());
-
-    return `${day} ${month}, ${year}`;
-  }
+}
